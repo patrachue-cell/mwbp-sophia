@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,9 +18,9 @@ import { Colors, Spacing, Typography } from '@/constants/theme';
 const PHILOSOPHER_IDS: PhilosopherId[] = ['socrates', 'plato', 'aristotle'];
 
 const DAILY_QUOTES = [
-  { text: '"너 자신을 알라"', author: '소크라테스' },
-  { text: '"이데아를 향해 나아가라"', author: '플라톤' },
-  { text: '"덕은 중용에 있다"', author: '아리스토텔레스' },
+  { text: '너 자신을 알라', author: '소크라테스' },
+  { text: '이데아를 향해 나아가라', author: '플라톤' },
+  { text: '덕은 중용에 있다', author: '아리스토텔레스' },
 ];
 
 export default function HomeScreen() {
@@ -33,21 +34,32 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+      {/* Header with Sophia */}
       <LinearGradient
-        colors={['#1a0a2e', '#0F0A1E']}
+        colors={['#EDE8FA', '#F5F0FF']}
         style={styles.header}
       >
-        <View style={styles.headerContent}>
-          <Text style={styles.appLabel}>MWBP via IT</Text>
-          <Text style={styles.appName}>Sophia</Text>
-          <Text style={styles.appSubtitle}>고대 철학자와 함께하는 사유의 공간</Text>
+        {/* Sophia goddess character */}
+        <View style={styles.sophiaRow}>
+          <View style={styles.sophiaAvatarWrapper}>
+          <Image
+            source={require('@/assets/sophia.jpeg')}
+            style={styles.sophiaImage}
+            resizeMode="cover"
+          />
+          </View>
+          <View style={styles.sophiaTitleBox}>
+            <Text style={styles.appLabel}>MWBP via IT</Text>
+            <Text style={styles.appName}>Sophia</Text>
+            <Text style={styles.appSubtitle}>고대 철학자와 함께하는{'\n'}사유의 공간</Text>
+          </View>
         </View>
 
         {/* Daily Quote */}
         <View style={styles.quoteCard}>
-          <Text style={styles.quoteDecoration}>"</Text>
-          <Text style={styles.quoteText}>{quote.text.replace(/^"|"$/g, '')}</Text>
+          <Text style={styles.quoteOpen}>"</Text>
+          <Text style={styles.quoteText}>{quote.text}</Text>
+          <Text style={styles.quoteClose}>"</Text>
           <Text style={styles.quoteAuthor}>— {quote.author}</Text>
         </View>
       </LinearGradient>
@@ -79,7 +91,7 @@ export default function HomeScreen() {
           <Text style={styles.howTitle}>어떻게 사용하나요?</Text>
           {[
             { icon: '💭', text: '일상의 고민이나 질문을 자유롭게 입력하세요' },
-            { icon: '🦉', text: '철학자가 그들의 방식으로 함께 탐구합니다' },
+            { icon: '🏛️', text: '철학자가 그들의 방식으로 함께 탐구합니다' },
             { icon: '✨', text: '스스로 답을 발견하는 과정을 경험하세요' },
           ].map((item, i) => (
             <View key={i} style={styles.howItem}>
@@ -100,44 +112,77 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
+    paddingBottom: Spacing.lg,
+    paddingTop: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  headerContent: {
+  sophiaRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
+  },
+  sophiaAvatarWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: Colors.sophia,
+    elevation: 8,
+    shadowColor: Colors.sophia,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+  },
+  sophiaImage: {
+    width: 120,
+    height: 120,
+  },
+  sophiaTitleBox: {
+    flex: 1,
+    paddingLeft: Spacing.md,
   },
   appLabel: {
     fontSize: Typography.fontSizeXs,
     color: Colors.text.muted,
     letterSpacing: 2,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   appName: {
-    fontSize: 42,
+    fontSize: 38,
     fontWeight: '800',
-    color: Colors.text.primary,
+    color: Colors.sophia,
     letterSpacing: 1,
+    lineHeight: 44,
   },
   appSubtitle: {
     fontSize: Typography.fontSizeSm,
     color: Colors.text.secondary,
     marginTop: 4,
+    lineHeight: 18,
   },
   quoteCard: {
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: Spacing.md,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
+    elevation: 2,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
-  quoteDecoration: {
-    fontSize: 40,
-    color: Colors.accent + '60',
-    lineHeight: 36,
-    marginBottom: -8,
+  quoteOpen: {
+    fontSize: 28,
+    color: Colors.sophia + '60',
+    lineHeight: 24,
+    marginBottom: -4,
+    alignSelf: 'flex-start',
+    fontStyle: 'italic',
   },
   quoteText: {
     fontSize: Typography.fontSizeMd,
@@ -145,11 +190,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     lineHeight: 22,
+    paddingHorizontal: Spacing.sm,
+  },
+  quoteClose: {
+    fontSize: 28,
+    color: Colors.sophia + '60',
+    lineHeight: 24,
+    marginTop: -4,
+    alignSelf: 'flex-end',
+    fontStyle: 'italic',
   },
   quoteAuthor: {
     fontSize: Typography.fontSizeSm,
     color: Colors.text.secondary,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xs,
   },
   scroll: {
     flex: 1,
@@ -183,6 +237,11 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.sm,
     borderWidth: 1,
     borderColor: Colors.border,
+    elevation: 2,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
   howTitle: {
     fontSize: Typography.fontSizeLg,

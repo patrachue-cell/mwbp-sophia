@@ -4,23 +4,26 @@
     "slug": "mwbp-sophia",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mwbp.sophia"
     },
     "android": {
-      "package": "com.mwbp.sophia"
+      "package": "com.mwbp.sophia",
+      "adaptiveIcon": {
+        "backgroundColor": "#1a0a2e"
+      }
     },
     "web": {
       "bundler": "metro",
-      "output": "server",
-      "favicon": "./assets/favicon.png"
+      "output": "server"
     },
     "plugins": [
       "expo-router"
     ],
     "scheme": "sophia",
+    "newArchEnabled": true,
     "experiments": {
       "typedRoutes": false
     }

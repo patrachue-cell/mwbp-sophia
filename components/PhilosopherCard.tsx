@@ -1,8 +1,13 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { TouchableOpacity, View, Text, StyleSheet, Image } from 'react-native';
 import { Philosopher } from '@/constants/philosophers';
 import { Colors, Spacing, Typography } from '@/constants/theme';
+
+const PHILOSOPHER_IMAGES: Record<string, any> = {
+  socrates: require('@/assets/socrates.png'),
+  plato: require('@/assets/plato.png'),
+  aristotle: require('@/assets/aristotle.png'),
+};
 
 interface Props {
   philosopher: Philosopher;
@@ -11,20 +16,38 @@ interface Props {
 }
 
 export default function PhilosopherCard({ philosopher, onPress, isSelected }: Props) {
+  const img = PHILOSOPHER_IMAGES[philosopher.id];
+
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.wrapper}>
-      <LinearGradient
-        colors={philosopher.gradientColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.card, isSelected && styles.selectedCard]}
-      >
-        {isSelected && <View style={styles.selectedBadge} />}
-        <Text style={styles.avatar}>{philosopher.avatar}</Text>
-        <Text style={styles.name}>{philosopher.nameKo}</Text>
-        <Text style={styles.era}>{philosopher.era}</Text>
-        <Text style={styles.tagline}>{philosopher.tagline}</Text>
-      </LinearGradient>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.82} style={styles.wrapper}>
+      <View style={[
+        styles.card,
+        { borderColor: philosopher.color + '99' },
+        isSelected && [styles.selectedCard, { borderColor: philosopher.color }],
+      ]}>
+        {isSelected && (
+          <View style={[styles.selectedBadge, { backgroundColor: philosopher.color }]} />
+        )}
+
+        {/* 철학자 실제 이미지 */}
+        <View style={[styles.imageWrapper, { borderColor: philosopher.color + '80' }]}>
+          <Image
+            source={img}
+            style={styles.philosopherImage}
+            resizeMode="cover"
+          />
+        </View>
+
+        {/* 구분선 */}
+        <View style={[styles.divider, { backgroundColor: philosopher.color + '40' }]} />
+
+        {/* 정보 */}
+        <View style={styles.infoBox}>
+          <Text style={[styles.name, { color: philosopher.color }]}>{philosopher.nameKo}</Text>
+          <Text style={styles.era}>{philosopher.era}</Text>
+          <Text style={styles.tagline}>{philosopher.tagline}</Text>
+        </View>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -33,51 +56,70 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     margin: Spacing.sm,
+    minWidth: 150,
   },
   card: {
-    borderRadius: 20,
-    padding: Spacing.md,
+    borderRadius: 24,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
-    minHeight: 160,
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    borderWidth: 2,
+    elevation: 8,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
   },
   selectedCard: {
-    borderWidth: 2,
-    borderColor: '#fff',
+    borderWidth: 3,
+    elevation: 12,
+    shadowOpacity: 0.4,
   },
   selectedBadge: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
+    top: 12,
+    right: 12,
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
   },
-  avatar: {
-    fontSize: 38,
+  imageWrapper: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    overflow: 'hidden',
+    borderWidth: 2,
     marginBottom: Spacing.sm,
+  },
+  philosopherImage: {
+    width: 140,
+    height: 140,
+  },
+  divider: {
+    width: '80%',
+    height: 1,
+    marginBottom: Spacing.sm,
+  },
+  infoBox: {
+    alignItems: 'center',
+    paddingHorizontal: 4,
   },
   name: {
     fontSize: Typography.fontSizeLg,
     fontWeight: '800',
-    color: '#fff',
     marginBottom: 2,
   },
   era: {
     fontSize: Typography.fontSizeXs,
-    color: 'rgba(255,255,255,0.75)',
-    marginBottom: Spacing.sm,
+    color: Colors.text.muted,
+    marginBottom: 4,
   },
   tagline: {
-    fontSize: Typography.fontSizeSm,
-    color: 'rgba(255,255,255,0.9)',
+    fontSize: 11,
+    color: Colors.text.secondary,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 16,
   },
 });

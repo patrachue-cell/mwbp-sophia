@@ -1,8 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { Message } from '@/types/chat';
 import { PHILOSOPHERS, PhilosopherId } from '@/constants/philosophers';
 import { Colors, Spacing, Typography } from '@/constants/theme';
+
+const PHILOSOPHER_IMAGES: Record<PhilosopherId, any> = {
+  socrates: require('@/assets/socrates.png'),
+  plato: require('@/assets/plato.png'),
+  aristotle: require('@/assets/aristotle.png'),
+};
 
 interface Props {
   message: Message;
@@ -17,11 +23,20 @@ export default function MessageBubble({ message, philosopherId, isStreaming }: P
   return (
     <View style={[styles.container, isUser ? styles.userContainer : styles.assistantContainer]}>
       {!isUser && (
-        <View style={[styles.avatarWrapper, { backgroundColor: philosopher.color + '22' }]}>
-          <Text style={styles.avatarEmoji}>{philosopher.avatar}</Text>
+        <View style={[styles.avatarWrapper, { borderColor: philosopher.color + '80' }]}>
+          <Image
+            source={PHILOSOPHER_IMAGES[philosopherId]}
+            style={styles.avatarImage}
+            resizeMode="cover"
+          />
         </View>
       )}
-      <View style={[styles.bubble, isUser ? styles.userBubble : styles.assistantBubble]}>
+      <View style={[
+        styles.bubble,
+        isUser
+          ? styles.userBubble
+          : [styles.assistantBubble, { borderColor: philosopher.color + '40' }],
+      ]}>
         {!isUser && (
           <Text style={[styles.philosopherName, { color: philosopher.color }]}>
             {philosopher.nameKo}
@@ -50,16 +65,17 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   avatarWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    overflow: 'hidden',
     marginRight: Spacing.sm,
     marginBottom: 2,
+    borderWidth: 2,
   },
-  avatarEmoji: {
-    fontSize: 18,
+  avatarImage: {
+    width: 38,
+    height: 38,
   },
   bubble: {
     maxWidth: '78%',
@@ -72,8 +88,14 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   assistantBubble: {
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.surface + 'E8',
     borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    elevation: 2,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
   },
   philosopherName: {
     fontSize: Typography.fontSizeXs,

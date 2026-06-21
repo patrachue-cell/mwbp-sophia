@@ -10,30 +10,49 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  useWindowDimensions,
+  Image,
+  ImageBackground,
 } from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-
-const triggerHaptic = () => {
-  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-};
 import MessageBubble from '@/components/MessageBubble';
 import TypingIndicator from '@/components/TypingIndicator';
+import ChatBackground from '@/components/ChatBackground';
 import { PHILOSOPHERS, WELCOME_MESSAGES, PhilosopherId } from '@/constants/philosophers';
 import { Colors, Spacing, Typography } from '@/constants/theme';
 import { Message, Conversation } from '@/types/chat';
 import { streamPhilosopherResponse } from '@/services/anthropic';
 import { saveConversation } from '@/services/storage';
+import { saveKnowledgeEntry, findSimilarEntries } from '@/services/knowledge';
+
+const triggerHaptic = () => {
+  if (Platform.OS === 'web') return;
+  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+};
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+const PHILOSOPHER_IMAGES: Record<string, any> = {
+  socrates: require('@/assets/socrates.png'),
+  plato: require('@/assets/plato.png'),
+  aristotle: require('@/assets/aristotle.png'),
+};
+
+function PhilosopherHeaderAvatar({ id, size }: { id: string; size: number }) {
+  const img = PHILOSOPHER_IMAGES[id];
+  if (!img) return null;
+  return <Image source={img} style={{ width: size, height: size }} resizeMode="cover" />;
 }
 
 export default function ChatScreen() {
   const { philosopherId } = useLocalSearchParams<{ philosopherId: string }>();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const listRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -75,6 +94,14 @@ export default function ChatScreen() {
     setInput('');
     triggerHaptic();
 
+    // 과거 유사 대화 참조 (지식 DB)
+    const similarEntries = await findSimilarEntries(id, text, 2);
+    const contextHint = similarEntries.length > 0
+      ? `\n\n[참고 - 이전 유사 대화]\n` + similarEntries.map(e =>
+          `Q: ${e.userQuestion.slice(0, 80)}\nA: ${e.philosopherAnswer.slice(0, 120)}`
+        ).join('\n---\n')
+      : '';
+
     const userMsg: Message = {
       id: generateId(),
       role: 'user',
@@ -100,7 +127,7 @@ export default function ChatScreen() {
       const history = messages.filter((m) => m.role === 'user' || m.role === 'assistant');
       let full = '';
 
-      for await (const chunk of streamPhilosopherResponse(id, history, text)) {
+      for await (const chunk of streamPhilosopherResponse(id, history, text + contextHint)) {
         full += chunk;
         const captured = full;
         setMessages((prev) =>
@@ -111,6 +138,9 @@ export default function ChatScreen() {
 
       setStreamingId(null);
       setIsLoading(false);
+
+      // 지식 DB에 이번 Q&A 자동 저장
+      await saveKnowledgeEntry(id, text, full);
 
       const finalMessages = [
         ...messages,
@@ -134,6 +164,7 @@ export default function ChatScreen() {
         err?.message ?? '잠시 후 다시 시도해주세요.',
         [{ text: '확인' }],
       );
+      console.error('[Sophia] 채팅 오류:', err);
     }
   }, [input, isLoading, messages, id]);
 
@@ -161,25 +192,36 @@ export default function ChatScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
     >
-      {/* Philosopher header strip */}
-      <View style={[styles.philosopherStrip, { borderBottomColor: philosopher.color + '40' }]}>
-        <Text style={styles.philosopherEmoji}>{philosopher.avatar}</Text>
-        <View>
+      {/* Philosopher header strip with SVG avatar */}
+      <View style={[styles.philosopherStrip, { borderBottomColor: philosopher.color + '50' }]}>
+        <View style={[styles.stripAvatarWrapper, { borderColor: philosopher.color }]}>
+          <PhilosopherHeaderAvatar id={id} size={48} />
+        </View>
+        <View style={styles.stripTextBox}>
           <Text style={[styles.stripName, { color: philosopher.color }]}>{philosopher.nameKo}</Text>
           <Text style={styles.stripEra}>{philosopher.era} · {philosopher.tagline}</Text>
         </View>
+        <View style={[styles.onlineDot, { backgroundColor: philosopher.color }]} />
       </View>
 
-      <FlatList
-        ref={listRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        ListFooterComponent={<ListFooter />}
-        contentContainerStyle={styles.listContent}
-        onContentSizeChange={scrollToBottom}
-        showsVerticalScrollIndicator={false}
-      />
+      <ImageBackground
+        source={PHILOSOPHER_IMAGES[id]}
+        style={styles.listWrapper}
+        imageStyle={styles.listBgImage}
+        resizeMode="cover"
+      >
+        <FlatList
+          ref={listRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ListFooterComponent={<ListFooter />}
+          contentContainerStyle={styles.listContent}
+          onContentSizeChange={scrollToBottom}
+          showsVerticalScrollIndicator={false}
+          style={styles.list}
+        />
+      </ImageBackground>
 
       {/* Input bar */}
       <View
@@ -198,6 +240,9 @@ export default function ChatScreen() {
           placeholderTextColor={Colors.text.muted}
           multiline
           maxLength={800}
+          disableFullscreenUI={true}
+          autoCorrect={false}
+          autoComplete="off"
           onSubmitEditing={Platform.OS === 'web' ? handleSend : undefined}
         />
         <TouchableOpacity
@@ -215,7 +260,7 @@ export default function ChatScreen() {
           {isLoading ? (
             <ActivityIndicator size="small" color={Colors.text.secondary} />
           ) : (
-            <Text style={styles.sendIcon}>↑</Text>
+            <Text style={[styles.sendIcon, { color: input.trim() ? '#fff' : Colors.text.muted }]}>↑</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -235,10 +280,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
+    borderBottomWidth: 1.5,
   },
-  philosopherEmoji: {
-    fontSize: 28,
+  stripAvatarWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 2,
+  },
+  stripTextBox: {
+    flex: 1,
   },
   stripName: {
     fontSize: Typography.fontSizeMd,
@@ -248,6 +300,22 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSizeXs,
     color: Colors.text.muted,
     marginTop: 1,
+  },
+  onlineDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+  },
+  list: {
+    backgroundColor: 'transparent',
+  },
+  listWrapper: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  listBgImage: {
+    opacity: 0.5,
+    resizeMode: 'cover',
   },
   listContent: {
     paddingTop: Spacing.md,
@@ -287,7 +355,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sendIcon: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: '700',
   },
