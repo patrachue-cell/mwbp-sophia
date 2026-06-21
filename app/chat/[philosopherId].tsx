@@ -26,6 +26,7 @@ import { Message, Conversation } from '@/types/chat';
 import { streamPhilosopherResponse } from '@/services/anthropic';
 import { saveConversation } from '@/services/storage';
 import { saveKnowledgeEntry, findSimilarEntries } from '@/services/knowledge';
+import { generateConversationSummary, saveSummary } from '@/services/summary';
 
 const triggerHaptic = () => {
   if (Platform.OS === 'web') return;
@@ -155,6 +156,15 @@ export default function ChatScreen() {
         updatedAt: Date.now(),
       };
       await saveConversation(conv);
+
+      // 메시지가 4개 이상(첫 환영 + 2회 이상 대화)이면 요약 생성
+      if (finalMessages.length >= 4) {
+        const baseUrl = process.env.EXPO_PUBLIC_ANTHROPIC_BASE_URL ?? '';
+        const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '';
+        generateConversationSummary(conv, baseUrl, apiKey)
+          .then(summary => { if (summary) saveSummary(summary); })
+          .catch(() => {});
+      }
     } catch (err: any) {
       setStreamingId(null);
       setIsLoading(false);

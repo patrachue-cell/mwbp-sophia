@@ -38,6 +38,18 @@
 - 다음 질문 시 유사 과거 대화 참조 → 맥락 누적
 - 철학자별 대화 통계 및 인기 주제 추적
 
+### 개인 기록 & 성찰 일기 (탭: 기록)
+- 철학자와의 대화 완료 후 Claude가 자동으로 3줄 요약 + 핵심 지혜 추출
+- 날짜별 대화 기록 타임라인 (감정 태그 포함)
+- 지혜 카드 상세 모달 (얻은 지혜 목록 확인)
+- 누적 통계: 총 대화 수, 자주 만난 철학자
+
+### Sophia 매일 멘탈 체크 (탭: Sophia)
+- 매일 오후 9시 로컬 푸시 알림: "Sophia가 오늘 하루를 물어보고 싶어해요 ✨"
+- Sophia 전용 채팅 — 따뜻한 안부 + 멘탈 상태 탐색
+- 대화 내용 자동 저장 → 기록 탭에 체크인으로 기록
+- 알림 시간 자유 설정 (기록 탭에서 7시~22시 중 선택)
+
 ---
 
 ## 기술 스택
@@ -47,8 +59,9 @@
 | 프레임워크 | Expo SDK 52 + Expo Router v4 |
 | 언어 | TypeScript |
 | UI | React Native, react-native-svg, LinearGradient |
-| AI | Anthropic Claude (claude-sonnet) |
+| AI | Anthropic Claude (claude-sonnet / claude-haiku) |
 | 스토리지 | AsyncStorage |
+| 알림 | expo-notifications (로컬 푸시) |
 | 플랫폼 | Android (에뮬레이터) / Web |
 
 ---
@@ -58,10 +71,15 @@
 ```
 MWBP-Sophia/
 ├── app/
-│   ├── _layout.tsx              # 루트 레이아웃 (라이트 테마)
-│   ├── index.tsx                # 홈 화면 (Sophia + 철학자 카드)
+│   ├── _layout.tsx              # 루트 레이아웃 (알림 권한 초기화)
+│   ├── index.tsx                # 탭으로 리다이렉트
+│   ├── (tabs)/
+│   │   ├── _layout.tsx          # 하단 탭 레이아웃 (철학자 | Sophia | 기록)
+│   │   ├── index.tsx            # 홈 화면 (Sophia + 철학자 카드)
+│   │   ├── sophia.tsx           # Sophia 멘탈 체크 채팅
+│   │   └── journal.tsx          # 개인 기록 + 지혜 카드 + 알림 설정
 │   ├── chat/
-│   │   └── [philosopherId].tsx  # 채팅 화면 (스트리밍 + 지식DB)
+│   │   └── [philosopherId].tsx  # 채팅 화면 (스트리밍 + 지식DB + 요약 트리거)
 │   └── api/
 │       └── chat+api.ts          # 웹 CORS 서버 프록시
 ├── components/
@@ -80,12 +98,14 @@ MWBP-Sophia/
 │   ├── aristotle.png            # Pixar풍 아리스토텔레스 이미지
 │   └── sophia.jpeg              # Sophia 대여신 이미지
 ├── constants/
-│   ├── philosophers.ts          # 철학자 정의 + 시스템 프롬프트
+│   ├── philosophers.ts          # 철학자 정의 + 시스템 프롬프트 + Sophia 프롬프트
 │   └── theme.ts                 # 라이트 테마 컬러/타이포
 ├── services/
 │   ├── anthropic.ts             # Claude API 스트리밍 클라이언트
 │   ├── storage.ts               # 대화 기록 저장
-│   └── knowledge.ts             # 지식 데이터베이스
+│   ├── knowledge.ts             # 지식 데이터베이스
+│   ├── summary.ts               # 대화 요약 + 성찰 일기
+│   └── notifications.ts         # 로컬 푸시 알림 스케줄링
 └── types/
     └── chat.ts                  # Message, Conversation 타입
 ```
@@ -167,6 +187,7 @@ KnowledgeEntry {
 | v2.1 | RPG 카드풍 SVG 아바타 (황금/파랑/초록 빛 테두리) |
 | v2.2 | Pixar풍 실제 이미지 적용 (카드, 채팅 배경, 아이콘) |
 | v2.3 | 지식 데이터베이스 (자동 저장, 유사 대화 참조, 통계) |
+| v3.0 | 하단 탭 네비게이션, 개인 기록 화면, Sophia 멘탈 체크, 로컬 푸시 알림 |
 
 ---
 
