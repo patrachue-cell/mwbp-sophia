@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Modal, ScrollView, Switch, Platform,
+  Modal, ScrollView, Switch, Platform, Share,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import { Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -157,6 +157,17 @@ export default function JournalScreen() {
 
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
+  async function shareWisdomCard(summary: ConversationSummary) {
+    const name = PHILOSOPHER_NAMES[summary.philosopherId] ?? summary.philosopherId;
+    const wisdomLines = summary.wisdoms.length > 0
+      ? summary.wisdoms.map(w => `"${w}"`).join('\n')
+      : summary.summary.slice(0, 120);
+    const text = `✨ ${name}의 지혜 — ${formatDate(summary.date)}\n\n${wisdomLines}\n\n— Sophia 철학AI 앱`;
+    try {
+      await Share.share({ message: text });
+    } catch {}
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* 헤더 */}
@@ -215,7 +226,23 @@ export default function JournalScreen() {
         <View style={styles.emptyBox}>
           <Text style={styles.emptyIcon}>📖</Text>
           <Text style={styles.emptyTitle}>아직 기록이 없어요</Text>
-          <Text style={styles.emptySub}>철학자와 대화를 나눠보세요{'\n'}대화가 끝나면 지혜를 요약해 드려요</Text>
+          <Text style={styles.emptySub}>
+            철학자와 대화를 나눠보세요{'\n'}대화가 끝나면 지혜를 요약해 드려요
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyCtaBtn}
+            onPress={() => router.push('/(tabs)')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.emptyCtaBtnText}>🏛️ 철학자와 대화하기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.emptyCtaBtn, styles.emptyCtaBtnSophia]}
+            onPress={() => router.push('/(tabs)/sophia')}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.emptyCtaBtnText, { color: Colors.sophia }]}>✨ Sophia와 대화하기</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -294,6 +321,18 @@ export default function JournalScreen() {
                   <Text style={styles.detailEmotionLabel}>오늘의 감정</Text>
                   <Text style={styles.detailEmotion}>{EMOTION_EMOJI[selectedSummary.emotion] || '💬'} {selectedSummary.emotion}</Text>
                 </View>
+                {selectedSummary.wisdoms.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.shareBtn}
+                    onPress={() => shareWisdomCard(selectedSummary)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="share-outline" size={18} color={PHILOSOPHER_COLORS[selectedSummary.philosopherId]} />
+                    <Text style={[styles.shareBtnText, { color: PHILOSOPHER_COLORS[selectedSummary.philosopherId] }]}>
+                      지혜 카드 공유하기
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </ScrollView>
             )}
             <TouchableOpacity style={[styles.modalClose, { backgroundColor: Colors.sophia }]} onPress={() => setSelectedSummary(null)}>
@@ -337,7 +376,10 @@ const styles = StyleSheet.create({
   emptyBox: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.xl },
   emptyIcon: { fontSize: 56, marginBottom: Spacing.md },
   emptyTitle: { fontSize: Typography.fontSizeLg, fontWeight: '700', color: Colors.text.primary, marginBottom: Spacing.sm },
-  emptySub: { fontSize: Typography.fontSizeSm, color: Colors.text.muted, textAlign: 'center', lineHeight: 20 },
+  emptySub: { fontSize: Typography.fontSizeSm, color: Colors.text.muted, textAlign: 'center', lineHeight: 20, marginBottom: Spacing.xl },
+  emptyCtaBtn: { width: '100%', backgroundColor: Colors.text.primary, borderRadius: 14, paddingVertical: Spacing.md, alignItems: 'center', marginBottom: Spacing.sm },
+  emptyCtaBtnSophia: { backgroundColor: Colors.sophia + '18', borderWidth: 1.5, borderColor: Colors.sophia },
+  emptyCtaBtnText: { fontSize: Typography.fontSizeMd, fontWeight: '700', color: '#fff' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalBox: { backgroundColor: Colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg },
   modalTitle: { fontSize: Typography.fontSizeLg, fontWeight: '700', color: Colors.text.primary, marginBottom: Spacing.md },
@@ -357,4 +399,6 @@ const styles = StyleSheet.create({
   wisdomItemText: { fontSize: Typography.fontSizeMd, color: Colors.text.primary, lineHeight: 22, fontStyle: 'italic' },
   detailEmotionLabel: { fontSize: Typography.fontSizeSm, color: Colors.text.muted, marginRight: Spacing.sm },
   detailEmotion: { fontSize: Typography.fontSizeMd, color: Colors.text.primary, fontWeight: '600' },
+  shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.xs, marginTop: Spacing.lg, borderWidth: 1.5, borderRadius: 14, paddingVertical: Spacing.sm + 2, borderColor: Colors.border },
+  shareBtnText: { fontSize: Typography.fontSizeMd, fontWeight: '700' },
 });
