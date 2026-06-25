@@ -21,10 +21,18 @@
       "output": "server"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#7C3AED",
+          "sounds": []
+        }
+      ]
     ],
     "scheme": "sophia",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "experiments": {
       "typedRoutes": false
     },
@@ -33,6 +41,15 @@
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#F5F0FF"
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "1918ddd2-4fbf-481f-a040-f22186ba5cf8"
+      }
+    },
+    "owner": "ground-link"
   }
 }
