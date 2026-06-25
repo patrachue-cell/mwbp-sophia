@@ -55,6 +55,11 @@ export default function RootLayout() {
           name="chat/[philosopherId]"
           options={{ headerBackTitle: '홈', title: '' }}
         />
+        {/* 결제 */}
+        <Stack.Screen
+          name="payment"
+          options={{ headerShown: false, presentation: 'modal' }}
+        />
       </Stack>
     </>
   );

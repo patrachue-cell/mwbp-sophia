@@ -5,10 +5,12 @@ import {
   ActivityIndicator, Alert, ImageBackground, Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, Typography } from '@/constants/theme';
 import { SOPHIA_SYSTEM_PROMPT } from '@/constants/philosophers';
 import { saveDailyCheckIn } from '@/services/summary';
+import { isPremiumUser } from '@/services/subscription';
 
 interface Message {
   id: string;
@@ -38,6 +40,64 @@ const WELCOME: Message = {
   timestamp: Date.now(),
 };
 
+// 무료 사용자에게 보여주는 구독 유도 화면
+function PremiumGate({ insets }: { insets: ReturnType<typeof useSafeAreaInsets> }) {
+  return (
+    <View style={[gateStyles.container, { paddingTop: insets.top }]}>
+      <View style={[gateStyles.header, { paddingTop: Spacing.sm }]}>
+        <View style={gateStyles.headerAvatarWrap}>
+          <Image source={require('@/assets/sophia.jpeg')} style={gateStyles.headerAvatar} resizeMode="cover" />
+        </View>
+        <View>
+          <Text style={gateStyles.headerName}>Sophia</Text>
+          <Text style={gateStyles.headerSub}>오늘의 멘탈 체크</Text>
+        </View>
+      </View>
+
+      <View style={gateStyles.body}>
+        <View style={gateStyles.lockIcon}>
+          <Text style={gateStyles.lockEmoji}>✨</Text>
+        </View>
+        <Text style={gateStyles.title}>Sophia 프리미엄</Text>
+        <Text style={gateStyles.desc}>
+          Sophia와 무제한 대화하며{'\n'}마음을 돌보세요.
+        </Text>
+
+        <View style={gateStyles.featureList}>
+          {[
+            '💬 Sophia와 무제한 대화',
+            '📊 감정 변화 분석',
+            '🗂️ 지혜 카드 저장 & 공유',
+            '🔔 매일 맞춤 알림',
+          ].map((f, i) => (
+            <View key={i} style={gateStyles.featureItem}>
+              <Text style={gateStyles.featureText}>{f}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={gateStyles.priceBox}>
+          <Text style={gateStyles.priceLabel}>월 구독</Text>
+          <Text style={gateStyles.price}>₩4,900</Text>
+          <Text style={gateStyles.priceSub}>언제든지 취소 가능</Text>
+        </View>
+
+        <TouchableOpacity
+          style={gateStyles.subscribeBtn}
+          onPress={() => router.push('/payment')}
+          activeOpacity={0.85}
+        >
+          <Text style={gateStyles.subscribeBtnText}>지금 시작하기</Text>
+        </TouchableOpacity>
+
+        <Text style={gateStyles.terms}>
+          결제는 토스페이먼츠를 통해 안전하게 처리됩니다.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export default function SophiaScreen() {
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
@@ -46,9 +106,22 @@ export default function SophiaScreen() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [streamingId, setStreamingId] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState<boolean | null>(null);
 
   const baseUrl = process.env.EXPO_PUBLIC_ANTHROPIC_BASE_URL ?? 'http://10.0.2.2:6655/anthropic/';
   const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '';
+
+  useEffect(() => {
+    isPremiumUser().then(setIsPremium);
+  }, []);
+
+  // 결제 화면에서 돌아올 때 구독 상태 재확인 (포커스 기반)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      isPremiumUser().then(setIsPremium);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const scrollToBottom = () => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
@@ -129,7 +202,6 @@ export default function SophiaScreen() {
       setStreamingId(null);
       setIsLoading(false);
 
-      // 대화 내용으로 간단한 체크인 저장
       if (full) {
         await saveDailyCheckIn({
           date: getToday(),
@@ -168,24 +240,40 @@ export default function SophiaScreen() {
     );
   };
 
+  // 구독 상태 로딩 중
+  if (isPremium === null) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator color={Colors.sophia} />
+      </View>
+    );
+  }
+
+  // 비구독 사용자
+  if (!isPremium) {
+    return <PremiumGate insets={insets} />;
+  }
+
+  // 프리미엄 사용자 — 채팅 화면
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
     >
-      {/* 헤더 */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <View style={styles.headerAvatarWrap}>
           <Image source={require('@/assets/sophia.jpeg')} style={styles.headerAvatar} resizeMode="cover" />
         </View>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.headerName}>Sophia</Text>
           <Text style={styles.headerSub}>오늘의 멘탈 체크</Text>
         </View>
+        <View style={styles.premiumBadge}>
+          <Text style={styles.premiumBadgeText}>✨ 프리미엄</Text>
+        </View>
       </View>
 
-      {/* 채팅 배경 + 메시지 */}
       <ImageBackground
         source={require('@/assets/sophia.jpeg')}
         style={styles.listWrapper}
@@ -208,7 +296,6 @@ export default function SophiaScreen() {
         />
       </ImageBackground>
 
-      {/* 입력창 */}
       <View style={[styles.inputBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : Spacing.md }, { borderTopColor: Colors.border }]}>
         <TextInput
           ref={inputRef}
@@ -246,6 +333,8 @@ const styles = StyleSheet.create({
   headerAvatar: { width: 48, height: 48 },
   headerName: { fontSize: Typography.fontSizeMd, fontWeight: '700', color: Colors.sophia },
   headerSub: { fontSize: Typography.fontSizeXs, color: Colors.text.muted },
+  premiumBadge: { backgroundColor: Colors.sophia + '20', borderRadius: 12, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
+  premiumBadgeText: { fontSize: Typography.fontSizeXs, fontWeight: '700', color: Colors.sophia },
   listWrapper: { flex: 1, backgroundColor: Colors.background },
   listBg: { opacity: 0.5 },
   listContent: { paddingTop: Spacing.md, paddingBottom: Spacing.sm },
@@ -266,4 +355,28 @@ const styles = StyleSheet.create({
   input: { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: 22, paddingHorizontal: Spacing.md, paddingTop: Platform.OS === 'ios' ? 10 : 8, paddingBottom: Platform.OS === 'ios' ? 10 : 8, fontSize: Typography.fontSizeMd, color: Colors.text.primary, maxHeight: 120, borderWidth: 1, borderColor: Colors.border },
   sendBtn: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
   sendIcon: { fontSize: 18, fontWeight: '700' },
+});
+
+const gateStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.background },
+  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingBottom: Spacing.sm, backgroundColor: Colors.surface, borderBottomWidth: 1.5, borderBottomColor: Colors.sophia + '50' },
+  headerAvatarWrap: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', borderWidth: 2, borderColor: Colors.sophia },
+  headerAvatar: { width: 48, height: 48 },
+  headerName: { fontSize: Typography.fontSizeMd, fontWeight: '700', color: Colors.sophia },
+  headerSub: { fontSize: Typography.fontSizeXs, color: Colors.text.muted },
+  body: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl },
+  lockIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.sophia + '20', justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.lg },
+  lockEmoji: { fontSize: 36 },
+  title: { fontSize: Typography.fontSizeXxl, fontWeight: '800', color: Colors.text.primary, marginBottom: Spacing.sm },
+  desc: { fontSize: Typography.fontSizeMd, color: Colors.text.secondary, textAlign: 'center', lineHeight: 22, marginBottom: Spacing.lg },
+  featureList: { width: '100%', marginBottom: Spacing.lg, gap: Spacing.sm },
+  featureItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 12, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderWidth: 1, borderColor: Colors.border },
+  featureText: { fontSize: Typography.fontSizeSm, color: Colors.text.primary, fontWeight: '500' },
+  priceBox: { alignItems: 'center', marginBottom: Spacing.lg },
+  priceLabel: { fontSize: Typography.fontSizeSm, color: Colors.text.muted, marginBottom: 2 },
+  price: { fontSize: 36, fontWeight: '800', color: Colors.sophia },
+  priceSub: { fontSize: Typography.fontSizeXs, color: Colors.text.muted, marginTop: 2 },
+  subscribeBtn: { width: '100%', backgroundColor: Colors.sophia, borderRadius: 16, paddingVertical: Spacing.md + 2, alignItems: 'center', marginBottom: Spacing.md, elevation: 4, shadowColor: Colors.sophia, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  subscribeBtnText: { fontSize: Typography.fontSizeLg, fontWeight: '800', color: '#fff' },
+  terms: { fontSize: Typography.fontSizeXs, color: Colors.text.muted, textAlign: 'center' },
 });

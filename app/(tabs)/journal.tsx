@@ -185,28 +185,30 @@ export default function JournalScreen() {
         </View>
       )}
 
-      {/* 알림 설정 */}
-      <View style={styles.notifCard}>
-        <View style={styles.notifRow}>
-          <Ionicons name="notifications-outline" size={20} color={Colors.sophia} />
-          <Text style={styles.notifTitle}>매일 Sophia 안부 알림</Text>
-          <Switch
-            value={notifEnabled}
-            onValueChange={toggleNotification}
-            trackColor={{ true: Colors.sophia, false: Colors.border }}
-            thumbColor={notifEnabled ? '#fff' : Colors.text.muted}
-          />
+      {/* 알림 설정 — 웹에서는 미지원으로 숨김 */}
+      {Platform.OS !== 'web' && (
+        <View style={styles.notifCard}>
+          <View style={styles.notifRow}>
+            <Ionicons name="notifications-outline" size={20} color={Colors.sophia} />
+            <Text style={styles.notifTitle}>매일 Sophia 안부 알림</Text>
+            <Switch
+              value={notifEnabled}
+              onValueChange={toggleNotification}
+              trackColor={{ true: Colors.sophia, false: Colors.border }}
+              thumbColor={notifEnabled ? '#fff' : Colors.text.muted}
+            />
+          </View>
+          {notifEnabled && (
+            <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.timeButton}>
+              <Ionicons name="time-outline" size={16} color={Colors.sophia} />
+              <Text style={[styles.timeText, { color: Colors.sophia }]}>
+                매일 {String(notifTime.hour).padStart(2, '0')}:{String(notifTime.minute).padStart(2, '0')} 알림
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color={Colors.sophia} />
+            </TouchableOpacity>
+          )}
         </View>
-        {notifEnabled && (
-          <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.timeButton}>
-            <Ionicons name="time-outline" size={16} color={Colors.sophia} />
-            <Text style={[styles.timeText, { color: Colors.sophia }]}>
-              매일 {String(notifTime.hour).padStart(2, '0')}:{String(notifTime.minute).padStart(2, '0')} 알림
-            </Text>
-            <Ionicons name="chevron-forward" size={14} color={Colors.sophia} />
-          </TouchableOpacity>
-        )}
-      </View>
+      )}
 
       {/* 기록 목록 */}
       {sortedDates.length === 0 ? (
