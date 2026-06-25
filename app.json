@@ -29,7 +29,9 @@
           "color": "#7C3AED",
           "sounds": []
         }
-      ]
+      ],
+      "expo-font",
+      "expo-asset"
     ],
     "scheme": "sophia",
     "newArchEnabled": false,
