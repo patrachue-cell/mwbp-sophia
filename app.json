@@ -12,7 +12,8 @@
     "android": {
       "package": "com.mwbp.sophia",
       "adaptiveIcon": {
-        "backgroundColor": "#1a0a2e"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#7C3AED"
       }
     },
     "web": {
@@ -26,6 +27,12 @@
     "newArchEnabled": true,
     "experiments": {
       "typedRoutes": false
+    },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F5F0FF"
     }
   }
 }
