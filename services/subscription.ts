@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// 결제 기능 활성화 플래그 — true로 바꾸면 구독 게이트 및 결제 화면이 활성화됨
+export const PAYMENT_ENABLED = false;
+
 const KEY = '@sophia:subscription';
 
 export interface SubscriptionInfo {

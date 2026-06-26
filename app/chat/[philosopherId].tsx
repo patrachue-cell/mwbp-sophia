@@ -45,8 +45,15 @@ const PHILOSOPHER_IMAGES: Record<string, any> = {
 
 function PhilosopherHeaderAvatar({ id, size }: { id: string; size: number }) {
   const img = PHILOSOPHER_IMAGES[id];
-  if (!img) return null;
-  return <Image source={img} style={{ width: size, height: size }} resizeMode="cover" />;
+  const philosopher = PHILOSOPHERS[id as PhilosopherId];
+  if (img) {
+    return <Image source={img} style={{ width: size, height: size }} resizeMode="cover" />;
+  }
+  return (
+    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center', backgroundColor: (philosopher?.color ?? '#888') + '20' }}>
+      <Text style={{ fontSize: size * 0.5 }}>{philosopher?.avatar ?? '🏛️'}</Text>
+    </View>
+  );
 }
 
 export default function ChatScreen() {
@@ -214,24 +221,40 @@ export default function ChatScreen() {
         <View style={[styles.onlineDot, { backgroundColor: philosopher.color }]} />
       </View>
 
-      <ImageBackground
-        source={PHILOSOPHER_IMAGES[id]}
-        style={styles.listWrapper}
-        imageStyle={styles.listBgImage}
-        resizeMode="cover"
-      >
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ListFooterComponent={<ListFooter />}
-          contentContainerStyle={styles.listContent}
-          onContentSizeChange={scrollToBottom}
-          showsVerticalScrollIndicator={false}
-          style={styles.list}
-        />
-      </ImageBackground>
+      {PHILOSOPHER_IMAGES[id] ? (
+        <ImageBackground
+          source={PHILOSOPHER_IMAGES[id]}
+          style={styles.listWrapper}
+          imageStyle={styles.listBgImage}
+          resizeMode="cover"
+        >
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            ListFooterComponent={<ListFooter />}
+            contentContainerStyle={styles.listContent}
+            onContentSizeChange={scrollToBottom}
+            showsVerticalScrollIndicator={false}
+            style={styles.list}
+          />
+        </ImageBackground>
+      ) : (
+        <View style={styles.listWrapper}>
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            ListFooterComponent={<ListFooter />}
+            contentContainerStyle={styles.listContent}
+            onContentSizeChange={scrollToBottom}
+            showsVerticalScrollIndicator={false}
+            style={styles.list}
+          />
+        </View>
+      )}
 
       {/* Input bar */}
       <View

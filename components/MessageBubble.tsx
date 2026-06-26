@@ -4,7 +4,7 @@ import { Message } from '@/types/chat';
 import { PHILOSOPHERS, PhilosopherId } from '@/constants/philosophers';
 import { Colors, Spacing, Typography } from '@/constants/theme';
 
-const PHILOSOPHER_IMAGES: Record<PhilosopherId, any> = {
+const PHILOSOPHER_IMAGES: Record<string, any> = {
   socrates: require('@/assets/socrates.png'),
   plato: require('@/assets/plato.png'),
   aristotle: require('@/assets/aristotle.png'),
@@ -19,16 +19,19 @@ interface Props {
 export default function MessageBubble({ message, philosopherId, isStreaming }: Props) {
   const isUser = message.role === 'user';
   const philosopher = PHILOSOPHERS[philosopherId];
+  const img = PHILOSOPHER_IMAGES[philosopherId];
 
   return (
     <View style={[styles.container, isUser ? styles.userContainer : styles.assistantContainer]}>
       {!isUser && (
         <View style={[styles.avatarWrapper, { borderColor: philosopher.color + '80' }]}>
-          <Image
-            source={PHILOSOPHER_IMAGES[philosopherId]}
-            style={styles.avatarImage}
-            resizeMode="cover"
-          />
+          {img ? (
+            <Image source={img} style={styles.avatarImage} resizeMode="cover" />
+          ) : (
+            <View style={[styles.emojiAvatar, { backgroundColor: philosopher.color + '20' }]}>
+              <Text style={styles.emojiAvatarText}>{philosopher.avatar}</Text>
+            </View>
+          )}
         </View>
       )}
       <View style={[
@@ -76,6 +79,15 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: 38,
     height: 38,
+  },
+  emojiAvatar: {
+    width: 38,
+    height: 38,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emojiAvatarText: {
+    fontSize: 20,
   },
   bubble: {
     maxWidth: '78%',

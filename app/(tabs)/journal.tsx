@@ -22,11 +22,17 @@ const PHILOSOPHER_IMAGES: Record<string, any> = {
   plato: require('@/assets/plato.png'),
   aristotle: require('@/assets/aristotle.png'),
 };
+const PHILOSOPHER_AVATARS: Record<string, string> = {
+  epictetus: '🔥',
+  marcus: '👑',
+};
 const PHILOSOPHER_NAMES: Record<string, string> = {
   socrates: '소크라테스', plato: '플라톤', aristotle: '아리스토텔레스',
+  epictetus: '에픽테토스', marcus: '마르쿠스 아우렐리우스',
 };
 const PHILOSOPHER_COLORS: Record<string, string> = {
   socrates: Colors.socrates, plato: Colors.plato, aristotle: Colors.aristotle,
+  epictetus: Colors.epictetus, marcus: Colors.marcus,
 };
 const EMOTION_EMOJI: Record<string, string> = {
   '불안': '😰', '성장': '🌱', '혼란': '😕', '평온': '😌', '용기': '💪',
@@ -43,11 +49,19 @@ function formatDate(dateStr: string): string {
 function SummaryCard({ item, onPress }: { item: ConversationSummary; onPress: () => void }) {
   const color = PHILOSOPHER_COLORS[item.philosopherId] || Colors.sophia;
   const emoji = EMOTION_EMOJI[item.emotion] || '💬';
+  const img = PHILOSOPHER_IMAGES[item.philosopherId];
+  const emojiAvatar = PHILOSOPHER_AVATARS[item.philosopherId];
   return (
     <TouchableOpacity style={[styles.card, { borderLeftColor: color }]} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.cardHeader}>
         <View style={[styles.cardAvatarWrap, { borderColor: color }]}>
-          <Image source={PHILOSOPHER_IMAGES[item.philosopherId]} style={styles.cardAvatar} resizeMode="cover" />
+          {img ? (
+            <Image source={img} style={styles.cardAvatar} resizeMode="cover" />
+          ) : (
+            <View style={[styles.cardAvatarEmoji, { backgroundColor: color + '20' }]}>
+              <Text style={styles.cardAvatarEmojiText}>{emojiAvatar ?? '🏛️'}</Text>
+            </View>
+          )}
         </View>
         <View style={styles.cardMeta}>
           <Text style={[styles.cardPhilosopher, { color }]}>{PHILOSOPHER_NAMES[item.philosopherId]}</Text>
@@ -85,6 +99,80 @@ function CheckInCard({ item }: { item: DailyCheckIn }) {
     </View>
   );
 }
+
+// 감정 → 점수 매핑 (긍정/부정 스펙트럼)
+const EMOTION_SCORE: Record<string, number> = {
+  '슬픔': 1, '불안': 2, '혼란': 3, '성찰': 4, '평온': 5,
+  '감사': 6, '희망': 6, '용기': 7, '성장': 8, '기쁨': 9,
+};
+const EMOTION_COLOR: Record<string, string> = {
+  '슬픔': '#8B9DC3', '불안': '#D4A5A5', '혼란': '#C4A882',
+  '성찰': '#9B8EC2', '평온': '#82B5A8', '감사': '#A8C5A0',
+  '희망': '#A8C5A0', '용기': '#F0B429', '성장': '#4CAF82', '기쁨': '#FF9D5C',
+};
+
+function EmotionGraph({ summaries, checkIns }: { summaries: ConversationSummary[]; checkIns: DailyCheckIn[] }) {
+  const allEntries = [
+    ...summaries.map(s => ({ date: s.date, emotion: s.emotion })),
+    ...checkIns.map(c => ({ date: c.date, emotion: c.emotion })),
+  ];
+
+  const byDate: Record<string, string[]> = {};
+  for (const e of allEntries) {
+    if (!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e.emotion);
+  }
+
+  const sortedDates = Object.keys(byDate).sort().slice(-7);
+  if (sortedDates.length < 2) return null;
+
+  const BAR_H = 80;
+  const MAX_SCORE = 9;
+
+  const points = sortedDates.map(date => {
+    const emotions = byDate[date];
+    const scores = emotions.map(e => EMOTION_SCORE[e] ?? 5);
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const mainEmotion = emotions[0] ?? '성찰';
+    return { date, avg, mainEmotion };
+  });
+
+  return (
+    <View style={graphStyles.container}>
+      <Text style={graphStyles.title}>최근 감정 흐름</Text>
+      <View style={graphStyles.chart}>
+        {points.map((p, i) => {
+          const barH = Math.round((p.avg / MAX_SCORE) * BAR_H);
+          const color = EMOTION_COLOR[p.mainEmotion] ?? Colors.sophia;
+          const dateLabel = p.date.slice(5); // "MM-DD"
+          return (
+            <View key={p.date} style={graphStyles.barCol}>
+              <Text style={graphStyles.emotionLabel}>
+                {EMOTION_EMOJI[p.mainEmotion] ?? '💬'}
+              </Text>
+              <View style={graphStyles.barTrack}>
+                <View style={[graphStyles.bar, { height: barH, backgroundColor: color }]} />
+              </View>
+              <Text style={graphStyles.dateLabel}>{dateLabel}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const graphStyles = StyleSheet.create({
+  container: { marginHorizontal: Spacing.md, marginBottom: Spacing.sm, backgroundColor: Colors.surface, borderRadius: 16, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border, elevation: 2, shadowColor: Colors.cardShadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  title: { fontSize: Typography.fontSizeSm, fontWeight: '700', color: Colors.text.muted, marginBottom: Spacing.sm },
+  chart: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 120 },
+  barCol: { alignItems: 'center', flex: 1 },
+  emotionLabel: { fontSize: 14, marginBottom: 4 },
+  barTrack: { width: 20, height: 80, justifyContent: 'flex-end', backgroundColor: Colors.surfaceElevated, borderRadius: 10, overflow: 'hidden' },
+  bar: { width: 20, borderRadius: 10, minHeight: 4 },
+  dateLabel: { fontSize: 9, color: Colors.text.muted, marginTop: 4, textAlign: 'center' },
+});
+
 
 export default function JournalScreen() {
   const insets = useSafeAreaInsets();
@@ -196,6 +284,11 @@ export default function JournalScreen() {
         </View>
       )}
 
+      {/* 감정 변화 그래프 */}
+      {(summaries.length > 0 || checkIns.length > 0) && (
+        <EmotionGraph summaries={summaries} checkIns={checkIns} />
+      )}
+
       {/* 알림 설정 — 웹에서는 미지원으로 숨김 */}
       {Platform.OS !== 'web' && (
         <View style={styles.notifCard}>
@@ -297,7 +390,13 @@ export default function JournalScreen() {
             {selectedSummary && (
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.detailHeader}>
-                  <Image source={PHILOSOPHER_IMAGES[selectedSummary.philosopherId]} style={styles.detailAvatar} resizeMode="cover" />
+                  {PHILOSOPHER_IMAGES[selectedSummary.philosopherId] ? (
+                    <Image source={PHILOSOPHER_IMAGES[selectedSummary.philosopherId]} style={styles.detailAvatar} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.detailAvatarEmoji, { backgroundColor: (PHILOSOPHER_COLORS[selectedSummary.philosopherId] || Colors.sophia) + '20' }]}>
+                      <Text style={styles.detailAvatarEmojiText}>{PHILOSOPHER_AVATARS[selectedSummary.philosopherId] ?? '🏛️'}</Text>
+                    </View>
+                  )}
                   <View>
                     <Text style={[styles.detailPhilosopher, { color: PHILOSOPHER_COLORS[selectedSummary.philosopherId] }]}>
                       {PHILOSOPHER_NAMES[selectedSummary.philosopherId]}
@@ -365,6 +464,8 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm, gap: Spacing.sm },
   cardAvatarWrap: { width: 36, height: 36, borderRadius: 18, overflow: 'hidden', borderWidth: 2 },
   cardAvatar: { width: 36, height: 36 },
+  cardAvatarEmoji: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
+  cardAvatarEmojiText: { fontSize: 18 },
   cardMeta: { flex: 1 },
   cardPhilosopher: { fontSize: Typography.fontSizeSm, fontWeight: '700' },
   emotionRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
@@ -391,6 +492,8 @@ const styles = StyleSheet.create({
   detailBox: { backgroundColor: Colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, maxHeight: '80%' },
   detailHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.lg },
   detailAvatar: { width: 52, height: 52, borderRadius: 26 },
+  detailAvatarEmoji: { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' },
+  detailAvatarEmojiText: { fontSize: 28 },
   detailPhilosopher: { fontSize: Typography.fontSizeLg, fontWeight: '800' },
   detailDate: { fontSize: Typography.fontSizeSm, color: Colors.text.muted, marginTop: 2 },
   detailSectionLabel: { fontSize: Typography.fontSizeSm, fontWeight: '700', color: Colors.text.muted, marginBottom: Spacing.sm, marginTop: Spacing.md },

@@ -13,6 +13,8 @@ export const Colors = {
   socrates: '#D4860A',
   plato: '#4A5CA8',
   aristotle: '#2E8B57',
+  epictetus: '#B05A2A',
+  marcus: '#3A7CA5',
   sophia: '#8B5CF6',
   accent: '#8B5CF6',
   danger: '#DC2626',

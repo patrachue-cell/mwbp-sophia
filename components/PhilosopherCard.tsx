@@ -29,19 +29,18 @@ export default function PhilosopherCard({ philosopher, onPress, isSelected }: Pr
           <View style={[styles.selectedBadge, { backgroundColor: philosopher.color }]} />
         )}
 
-        {/* 철학자 실제 이미지 */}
         <View style={[styles.imageWrapper, { borderColor: philosopher.color + '80' }]}>
-          <Image
-            source={img}
-            style={styles.philosopherImage}
-            resizeMode="cover"
-          />
+          {img ? (
+            <Image source={img} style={styles.philosopherImage} resizeMode="cover" />
+          ) : (
+            <View style={[styles.emojiAvatar, { backgroundColor: philosopher.color + '20' }]}>
+              <Text style={styles.emojiAvatarText}>{philosopher.avatar}</Text>
+            </View>
+          )}
         </View>
 
-        {/* 구분선 */}
         <View style={[styles.divider, { backgroundColor: philosopher.color + '40' }]} />
 
-        {/* 정보 */}
         <View style={styles.infoBox}>
           <Text style={[styles.name, { color: philosopher.color }]}>{philosopher.nameKo}</Text>
           <Text style={styles.era}>{philosopher.era}</Text>
@@ -96,6 +95,15 @@ const styles = StyleSheet.create({
   philosopherImage: {
     width: 140,
     height: 140,
+  },
+  emojiAvatar: {
+    width: 140,
+    height: 140,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emojiAvatarText: {
+    fontSize: 60,
   },
   divider: {
     width: '80%',

@@ -15,12 +15,14 @@ import PhilosopherCard from '@/components/PhilosopherCard';
 import { PHILOSOPHERS, PhilosopherId } from '@/constants/philosophers';
 import { Colors, Spacing, Typography } from '@/constants/theme';
 
-const PHILOSOPHER_IDS: PhilosopherId[] = ['socrates', 'plato', 'aristotle'];
+const PHILOSOPHER_IDS: PhilosopherId[] = ['socrates', 'plato', 'aristotle', 'epictetus', 'marcus'];
 
 const DAILY_QUOTES = [
   { text: '너 자신을 알라', author: '소크라테스' },
   { text: '이데아를 향해 나아가라', author: '플라톤' },
   { text: '덕은 중용에 있다', author: '아리스토텔레스' },
+  { text: '우리 능력 밖의 것에 흔들리지 말라', author: '에픽테토스' },
+  { text: '지금 이 순간에 집중하라', author: '마르쿠스 아우렐리우스' },
 ];
 
 export default function HomeScreen() {

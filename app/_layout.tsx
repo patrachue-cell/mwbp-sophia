@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { Colors } from '@/constants/theme';
 import { requestPermissions, scheduleDailyCheckIn, isNotificationScheduled } from '@/services/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PAYMENT_ENABLED } from '@/services/subscription';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -55,11 +56,13 @@ export default function RootLayout() {
           name="chat/[philosopherId]"
           options={{ headerBackTitle: '홈', title: '' }}
         />
-        {/* 결제 */}
-        <Stack.Screen
-          name="payment"
-          options={{ headerShown: false, presentation: 'modal' }}
-        />
+        {/* 결제 — PAYMENT_ENABLED=true 일 때만 라우트 활성화 */}
+        {PAYMENT_ENABLED && (
+          <Stack.Screen
+            name="payment"
+            options={{ headerShown: false, presentation: 'modal' }}
+          />
+        )}
       </Stack>
     </>
   );

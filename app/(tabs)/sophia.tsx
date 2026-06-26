@@ -10,7 +10,7 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, Typography } from '@/constants/theme';
 import { SOPHIA_SYSTEM_PROMPT } from '@/constants/philosophers';
 import { saveDailyCheckIn } from '@/services/summary';
-import { isPremiumUser } from '@/services/subscription';
+import { isPremiumUser, PAYMENT_ENABLED } from '@/services/subscription';
 
 interface Message {
   id: string;
@@ -249,8 +249,8 @@ export default function SophiaScreen() {
     );
   }
 
-  // 비구독 사용자
-  if (!isPremium) {
+  // 비구독 사용자 (결제 기능 활성화 시에만)
+  if (PAYMENT_ENABLED && !isPremium) {
     return <PremiumGate insets={insets} />;
   }
 
